@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winter Arc Tracker</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#061323;
+  color:white;
+}
+.container{
+  max-width:1400px;
+  margin:auto;
+  padding:20px;
+}
+.header{
+  text-align:center;
+  padding:25px 10px;
+  background:linear-gradient(135deg,#071a31,#0b3c65);
+  border-radius:20px;
+  margin-bottom:15px;
+}
+.header h1{
+  margin:0;
+  font-size:42px;
+  letter-spacing:3px;
+}
+.header p{
+  color:#8bdcff;
+  margin:8px 0 0;
+  letter-spacing:2px;
+}
+.name-box{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin:15px 0;
+  flex-wrap:wrap;
+}
+input,button{
+  min-height:44px;
+  border-radius:9px;
+  border:1px solid #31536e;
+}
+input{
+  background:#0b2035;
+  color:white;
+  padding:10px;
+}
+button{
+  background:#19bfff;
+  color:#00121e;
+  padding:10px 18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-bottom:15px;
+}
+.stat{
+  background:#0c2238;
+  border:1px solid #244963;
+  border-radius:14px;
+  padding:15px;
+  text-align:center;
+}
+.stat b{
+  display:block;
+  font-size:25px;
+  color:#36c8ff;
+}
+.stat span{
+  color:#9fb4c5;
+  font-size:13px;
+}
+.table-wrap{
+  overflow:auto;
+  background:#0b1d30;
+  border-radius:15px;
+  border:1px solid #294b63;
+}
+table{
+  border-collapse:collapse;
+  min-width:1150px;
+  width:100%;
+}
+th,td{
+  border:1px solid #24445b;
+  padding:7px;
+  text-align:center;
+}
+th{
+  background:#102c45;
+  color:#bcecff;
+  position:sticky;
+  top:0;
+}
+td:first-child,th:first-child{
+  position:sticky;
+  left:0;
+  background:#0c253d;
+  z-index:2;
+  text-align:left;
+  min-width:190px;
+}
+.habit{
+  font-weight:bold;
+  font-size:13px;
+}
+.day{
+  font-size:12px;
+}
+.check{
+  width:24px;
+  height:24px;
+  accent-color:#16c5ff;
+  cursor:pointer;
+}
+.section{
+  margin-top:15px;
+  background:#0c2238;
+  border:1px solid #244963;
+  border-radius:15px;
+  padding:18px;
+}
+.section h2{
+  margin-top:0;
+  color:#45d1ff;
+}
+.goal{
+  padding:7px 0;
+}
+.goal input{
+  width:18px;
+  height:18px;
+  vertical-align:middle;
+}
+@media(max-width:600px){
+  .container{padding:10px}
+  .header h1{font-size:30px}
+  .stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+  <h1>❄️ WINTER ARC</h1>
+  <p>DISCIPLINE BUILDS A BETTER YOU</p>
+  <h3>OCTOBER 2026</h3>
+</div>
+
+<div class="name-box">
+  <input id="name" value="ISHA" placeholder="Enter your name">
+  <button onclick="saveName()">SAVE NAME</button>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <b id="completed">0</b>
+    <span>Completed</span>
+  </div>
+  <div class="stat">
+    <b id="progress">0%</b>
+    <span>Progress</span>
+  </div>
+  <div class="stat">
+    <b id="streak">0</b>
+    <span>Best Streak</span>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>HABITS / GOALS</th>
+<script>
+for(let d=1;d<=31;d++){
+ document.write("<th>"+d+"</th>");
+}
+</script>
+</tr>
+</thead>
+
+<tbody id="tracker"></tbody>
+</table>
+</div>
+
+<div class="section">
+
+<h2>🎯 MY GOALS THIS OCTOBER</h2>
+
+<div class="goal">
+<input type="checkbox"> Wake up daily at 5:30
+</div>
+
+<div class="goal">
+<input type="checkbox"> Body transformation
+</div>
+
+<div class="goal">
+<input type="checkbox"> Regular running
+</div>
+
+<div class="goal">
+<input type="checkbox"> Better diet & healthy lifestyle
+</div>
+
+<div class="goal">
+<input type="checkbox"> Avoid junk food
+</div>
+
+<div class="goal">
+<input type="checkbox"> Avoid cold drinks
+</div>
+
+<div class="goal">
+<input type="checkbox"> Study / skill improvement
+</div>
+
+<div class="goal">
+<input type="checkbox"> Reduce screen time
+</div>
+
+<div class="goal">
+<input type="checkbox"> Clean and organized room
+</div>
+
+</div>
+
+<div class="section">
+
+<h2>📊 MONTHLY REVIEW</h2>
+
+<p id="review">
+Start ticking your habits to see your monthly progress.
+</p>
+
+</div>
+
+</div>
+
+<script>
+
+const habits=[
+"⏰ Wake Up 5:30",
+"🏋️ Gym / Workout",
+"🏃 Running",
+"🍎 Healthy Diet",
+"🚫 No Junk Food",
+"🥤 No Cold Drink",
+"💧 Water (3L)",
+"😴 Sleep 7–9h",
+"📚 Study / Skill",
+"📱 Less Screen Time",
+"🧹 Room Clean"
+];
+
+const tracker=document.getElementById("tracker");
+
+let data=JSON.parse(localStorage.getItem("winterArcData")) || {};
+
+function createTracker(){
+
+tracker.innerHTML="";
+
+habits.forEach((habit,h)=>{
+
+let row=document.createElement("tr");
+
+let title=document.createElement("td");
+title.className="habit";
+title.innerText=habit;
+
+row.appendChild(title);
+
+for(let d=1;d<=31;d++){
+
+let cell=document.createElement("td");
+
+let checkbox=document.createElement("input");
+
+checkbox.type="checkbox";
+checkbox.className="check";
+
+let key=h+"-"+d;
+
+checkbox.checked=data[key] || false;
+
+checkbox.addEventListener("change",function(){
+
+data[key]=this.checked;
+
+localStorage.setItem(
+"winterArcData",
+JSON.stringify(data)
+);
+
+updateStats();
+
+});
+
+cell.appendChild(checkbox);
+row.appendChild(cell);
+
+}
+
+tracker.appendChild(row);
+
+});
+
+updateStats();
+
+}
+
+function updateStats(){
+
+let total=habits.length*31;
+let completed=Object.values(data).filter(x=>x===true).length;
+
+let percentage=Math.round(
+(completed/total)*100
+);
+
+document.getElementById("completed").innerText=
+completed+"/"+total;
+
+document.getElementById("progress").innerText=
+percentage+"%";
+
+let best=0;
+let current=0;
+
+for(let d=1;d<=31;d++){
+
+let complete=true;
+
+for(let h=0;h<habits.length;h++){
+
+if(!data[h+"-"+d]){
+complete=false;
+break;
+}
+
+}
+
+if(complete){
+current++;
+best=Math.max(best,current);
+}else{
+current=0;
+}
+
+}
+
+document.getElementById("streak").innerText=
+best+" days";
+
+document.getElementById("review").innerText=
+"Monthly progress: "+percentage+
+"% • "+completed+" habit checks completed.";
+
+}
+
+function saveName(){
+
+let name=document.getElementById("name").value.trim();
+
+if(name){
+
+localStorage.setItem("winterArcName",name);
+
+alert("Name saved: "+name);
+
+}
+
+}
+
+let savedName=localStorage.getItem("winterArcName");
+
+if(savedName){
+document.getElementById("name").value=savedName;
+}
+
+createTracker();
+
+</script>
+
+</body>
+</html>
