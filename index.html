@@ -407,6 +407,391 @@ document.getElementById("name").value=savedName;
 createTracker();
 
 </script>
+<!-- WINTER ARC LOGIN SYSTEM -->
+<style>
+#authScreen{
+  position:fixed;
+  inset:0;
+  background:#061323;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  padding:20px;
+}
 
+.authBox{
+  width:100%;
+  max-width:420px;
+  background:linear-gradient(145deg,#0b2038,#071525);
+  border:1px solid #284b70;
+  border-radius:22px;
+  padding:30px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  text-align:center;
+}
+
+.authBox h1{
+  margin:0 0 5px;
+  font-size:30px;
+}
+
+.authBox p{
+  color:#9fb4ca;
+  margin-bottom:25px;
+}
+
+.authBox input{
+  width:100%;
+  padding:14px;
+  margin:7px 0;
+  border:1px solid #315577;
+  border-radius:10px;
+  background:#081827;
+  color:white;
+  font-size:15px;
+  outline:none;
+}
+
+.authBox button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border:0;
+  border-radius:10px;
+  background:#1d78d4;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.authBox button:hover{
+  background:#2b8bea;
+}
+
+#authMessage{
+  min-height:22px;
+  margin-top:15px;
+  font-size:14px;
+  color:#9fc8ef;
+}
+
+#userBar{
+  display:none;
+  position:fixed;
+  top:12px;
+  right:12px;
+  z-index:9999;
+  background:#0b2038;
+  border:1px solid #315577;
+  border-radius:10px;
+  padding:8px 12px;
+  font-size:13px;
+}
+
+#logoutBtn{
+  margin-left:10px;
+  padding:6px 10px;
+  border:0;
+  border-radius:7px;
+  background:#b83232;
+  color:white;
+  cursor:pointer;
+}
+</style>
+
+<div id="authScreen">
+  <div class="authBox">
+    <h1>❄️ WINTER ARC</h1>
+    <p>Create your account to save your tracker</p>
+
+    <input id="authEmail" type="email" placeholder="Email address">
+    <input id="authPassword" type="password" placeholder="Password">
+
+    <button onclick="winterSignUp()">Create Account</button>
+    <button onclick="winterLogin()">Login</button>
+
+    <div id="authMessage"></div>
+  </div>
+</div>
+
+<div id="userBar">
+  <span id="loggedUser"></span>
+  <button id="logoutBtn" onclick="winterLogout()">Logout</button>
+</div>
+
+<script>
+const authScreen = document.getElementById("authScreen");
+const userBar = document.getElementById("userBar");
+const loggedUser = document.getElementById("loggedUser");
+const authMessage = document.getElementById("authMessage");
+
+function showAuthMessage(message){
+  authMessage.textContent = message;
+}
+
+async function winterSignUp(){
+
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+
+  if(!email || !password){
+    showAuthMessage("Please enter email and password.");
+    return;
+  }
+
+  if(password.length < 6){
+    showAuthMessage("Password must be at least 6 characters.");
+    return;
+  }
+
+  showAuthMessage("Creating account...");
+
+  const {data,error} = await supabaseClient.auth.signUp({
+    email:email,
+    password:password
+  });
+
+  if(error){
+    showAuthMessage(error.message);
+    return;
+  }
+
+  if(data.session){
+    showAuthMessage("Account created!");
+    await winterStart(data.user);
+  }else{
+    showAuthMessage("Account created! Check your email to confirm, then login.");
+  }
+}
+
+
+async function winterLogin(){
+
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+
+  if(!email || !password){
+    showAuthMessage("Please enter email and password.");
+    return;
+  }
+
+  showAuthMessage("Logging in...");
+
+  const {data,error} = await supabaseClient.auth.signInWithPassword({
+    email:email,
+    password:password
+  });
+
+  if(error){
+    showAuthMessage(error.message);
+    return;
+  }
+
+  await winterStart(data.user);
+}
+
+
+async function winterStart(user){
+
+  authScreen.style.display = "none";
+  userBar.style.display = "block";
+
+  loggedUser.textContent = user.email;
+
+  await loadWinterTracker(user.id);
+
+  attachWinterAutoSave();
+}
+
+
+async function winterLogout(){
+
+  await supabaseClient.auth.signOut();
+
+  userBar.style.display = "none";
+  authScreen.style.display = "flex";
+
+  showAuthMessage("Logged out.");
+}
+
+
+function getTrackerElements(){
+
+  return document.querySelectorAll(
+    ".container input, .container textarea, .container select, .container [contenteditable='true']"
+  );
+
+}
+
+
+function collectTrackerData(){
+
+  const elements = getTrackerElements();
+
+  const inputs = [];
+
+  elements.forEach((el,index)=>{
+
+    inputs.push({
+      index:index,
+      tag:el.tagName,
+      type:el.type || "",
+      value:el.value ?? "",
+      checked:el.checked ?? false,
+      text:el.isContentEditable ? el.innerHTML : ""
+    });
+
+  });
+
+  return {
+    inputs:inputs,
+    savedAt:new Date().toISOString()
+  };
+
+}
+
+
+async function saveWinterTracker(){
+
+  const {data:{user}} = await supabaseClient.auth.getUser();
+
+  if(!user) return;
+
+  const trackerData = collectTrackerData();
+
+  const nameInput = document.getElementById("name");
+
+  const name =
+    nameInput && nameInput.value.trim()
+    ? nameInput.value.trim()
+    : "User";
+
+  const {error} = await supabaseClient
+    .from("tracker_data")
+    .upsert({
+      user_id:user.id,
+      name:name,
+      data:trackerData
+    },{
+      onConflict:"user_id"
+    });
+
+  if(error){
+    console.error("Tracker save error:",error);
+  }
+
+}
+
+
+async function loadWinterTracker(userId){
+
+  const {data,error} = await supabaseClient
+    .from("tracker_data")
+    .select("*")
+    .eq("user_id",userId)
+    .maybeSingle();
+
+  if(error){
+    console.error("Tracker load error:",error);
+    return;
+  }
+
+  if(!data){
+    return;
+  }
+
+  const trackerData = data.data;
+
+  if(!trackerData || !trackerData.inputs){
+    return;
+  }
+
+  const elements = getTrackerElements();
+
+  trackerData.inputs.forEach(saved=>{
+
+    const el = elements[saved.index];
+
+    if(!el) return;
+
+    if(el.isContentEditable){
+      el.innerHTML = saved.text || "";
+    }else if(el.type === "checkbox" || el.type === "radio"){
+      el.checked = !!saved.checked;
+    }else{
+      el.value = saved.value ?? "";
+    }
+
+  });
+
+}
+
+
+let winterSaveTimer = null;
+
+function attachWinterAutoSave(){
+
+  const elements = getTrackerElements();
+
+  elements.forEach(el=>{
+
+    el.addEventListener("change",winterScheduleSave);
+    el.addEventListener("input",winterScheduleSave);
+
+  });
+
+}
+
+
+function winterScheduleSave(){
+
+  clearTimeout(winterSaveTimer);
+
+  winterSaveTimer = setTimeout(()=>{
+    saveWinterTracker();
+  },800);
+
+}
+
+
+window.addEventListener("beforeunload",()=>{
+  saveWinterTracker();
+});
+
+
+async function checkWinterSession(){
+
+  const {data} = await supabaseClient.auth.getSession();
+
+  if(data.session){
+
+    await winterStart(data.session.user);
+
+  }else{
+
+    authScreen.style.display = "flex";
+    userBar.style.display = "none";
+
+  }
+
+}
+
+
+checkWinterSession();
+
+
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+
+  if(event === "SIGNED_OUT"){
+
+    authScreen.style.display = "flex";
+    userBar.style.display = "none";
+
+  }
+
+});
+</script>
 </body>
 </html>
