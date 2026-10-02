@@ -592,16 +592,50 @@ async function winterLogin(){
 }
 
 
+function resetWinterTracker(){
+
+  const elements = document.querySelectorAll(
+    ".container input, .container textarea, .container select, .container [contenteditable='true']"
+  );
+
+  elements.forEach(el => {
+
+    if(el.isContentEditable){
+      el.innerHTML = "";
+    }
+    else if(el.type === "checkbox" || el.type === "radio"){
+      el.checked = false;
+    }
+    else if(el.tagName === "SELECT"){
+      el.selectedIndex = 0;
+    }
+    else{
+      el.value = "";
+    }
+
+  });
+
+}
+
+
 async function winterStart(user){
 
+  // Purane account ka screen data clear karo
+  resetWinterTracker();
+
+  // Login screen hide
   authScreen.style.display = "none";
   userBar.style.display = "block";
 
+  // Current logged-in user show karo
   loggedUser.textContent = user.email;
 
+  // Sirf current user ka database data load karo
   await loadWinterTracker(user.id);
 
+  // Auto-save enable karo
   attachWinterAutoSave();
+
 }
 
 
